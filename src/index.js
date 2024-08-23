@@ -1,4 +1,5 @@
 /**
+ * @todo Bounding box in god mode.
  * @todo Offset touch target to above fingertip so it's visible.
  * @todo Distinct touch interactions for moving target versus camera.
  * @todo Make camera move more consistently, especially dolly out...
@@ -15,7 +16,8 @@ import { Olta } from '@olta/js-sdk';
 import {
     WebGLRenderer, Scene, Raycaster, PerspectiveCamera, Clock,
     Vector2, Vector3, Vector4, Quaternion, Matrix4, Spherical, Box3, Sphere,
-    InstancedMesh, SphereGeometry, CylinderGeometry, MeshToonMaterial,
+    InstancedMesh, SphereGeometry, CylinderGeometry, BoxGeometry,
+    MeshToonMaterial, MeshBasicMaterial,
     HemisphereLight, PointLight, Color, MathUtils, Fog, DoubleSide,
     BufferGeometry, Mesh, Group, TextureLoader, NearestFilter,
     NumberKeyframeTrack, VectorKeyframeTrack,
@@ -118,6 +120,7 @@ const flee = (t) => (t+2)%teams;
 function teamTo(t) {
   console.log('picked team', team = api.team = t);
   $root.classList.add('team-picked', 'team-picked-'+t);
+  api.fence?.material?.color?.copy?.(colors.teams[t]);
 }
 
 each((c, i) => $root.style.setProperty('--team-color-'+i, '#'+c.getHexString()),
@@ -306,6 +309,15 @@ function toTrace(x, y, z, r) {
 }
 
 scene.add(traces.group);
+
+/** Display the bounds box for easier placement in god mode. */
+if(god) {
+  const fence = api.fence = new Mesh(new BoxGeometry(1, 1, 1, 1e2, 1e2, 1e2),
+    new MeshBasicMaterial({ wireframe: true }));
+
+  fence.scale.setScalar(bounds[1]*2*positionScale);
+  scene.add(fence);
+}
 
 const raycaster = api.raycaster = new Raycaster();
 
@@ -535,6 +547,23 @@ $canvas.addEventListener('pointerdown', (e) => {
 //   orbit.setOrbitPoint(px, py, pz);
 //   needRender = true;
 // });
+
+/** Convenience function for adding forms from developer console. */
+god && (api.spawn = (r = lerp(...radii, 0.25), t = team, x, y, z) => {
+  const p = camera.position;
+
+  const to = {
+    t,
+    x: round(clamp(x ?? p.x/positionScale, ...bounds)),
+    y: round(clamp(y ?? p.y/positionScale, ...bounds)),
+    z: round(clamp(z ?? p.z/positionScale, ...bounds)),
+    r: round(clamp(r, ...radii))
+  };
+
+  console.log('spawn', to);
+
+  return olta.create('forms', to);
+});
 
 hint.mesh.material.emissive = hint.mesh.material.color;
 hint.mesh.material.emissiveIntensity = 0.5;
