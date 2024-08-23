@@ -549,15 +549,15 @@ $canvas.addEventListener('pointerdown', (e) => {
 // });
 
 /** Convenience function for adding forms from developer console. */
-god && (api.spawn = (r = lerp(...radii, 0.25), t = team, x, y, z) => {
+god && (api.spawn = (r, t, x, y, z) => {
   const p = camera.position;
 
   const to = {
-    t,
-    x: round(clamp(x ?? p.x/positionScale, ...bounds)),
-    y: round(clamp(y ?? p.y/positionScale, ...bounds)),
-    z: round(clamp(z ?? p.z/positionScale, ...bounds)),
-    r: round(clamp(r, ...radii))
+    t: round(t ??= team),
+    x: round(clamp(x ??= p.x/positionScale, ...bounds)),
+    y: round(clamp(y ??= p.y/positionScale, ...bounds)),
+    z: round(clamp(z ??= p.z/positionScale, ...bounds)),
+    r: round(clamp(r ??= lerp(...radii, 0.25), ...radii))
   };
 
   console.log('spawn', to);
